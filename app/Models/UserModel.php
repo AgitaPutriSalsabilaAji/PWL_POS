@@ -18,4 +18,10 @@ class UserModel extends Model
     {
         return $this->belongsTo(LevelModel::class, 'level_id', 'level_id');
     }
+
+    public function kategori()
+    {
+        return $this->belongsTo(KategoriModel::class, 'kategori_id', 'id');
+    }
+
 }

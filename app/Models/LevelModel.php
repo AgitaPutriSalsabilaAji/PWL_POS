@@ -6,7 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class LevelModel extends Model
 {
-    protected $table = 'm_level'; // pastikan nama tabelnya benar
+    protected $table = 'm_level';
     protected $primaryKey = 'level_id';
-    protected $fillable = ['nama_level']; // pastikan kolom ini memang ada
+    public $timestamps = false;
+
+    protected $fillable = ['level_nama'];
 }
+
