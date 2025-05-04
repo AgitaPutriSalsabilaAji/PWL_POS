@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\KategoriModel; // Menggunakan KategoriModel
-use App\Models\UserModel;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Validator;
 
 class KategoriController extends Controller
 {
@@ -13,48 +13,36 @@ class KategoriController extends Controller
     public function index()
     {
         $breadcrumb = (object) [
-            'title' => 'Daftar User',
+            'title' => 'Daftar Kategori',
             'list' => ['Home', 'User']
         ];
 
         $page = (object) [
-            'title' => 'Daftar user yang terdaftar dalam sistem'
+            'title' => 'Daftar kategori yang terdaftar dalam sistem'
         ];
 
-        $activeMenu = 'user'; // set menu yang sedang aktif 
+        $activeMenu = 'kategori'; // set menu yang sedang aktif 
 
-        $kategori = KategoriModel::all();
-
-        return view('user.index', [
+        return view('kategori.index', [
             'breadcrumb' => $breadcrumb,
             'page' => $page,
             'activeMenu' => $activeMenu,
-            'kategori' => $kategori // Menyertakan kategori dalam view
         ]);
     }
 
-    // Ambil data user dalam bentuk json untuk datatables
-    public function list(Request $request)
+        public function list(Request $request)
     {
-        $users = UserModel::select('user_id', 'username', 'nama', 'kategori_id') // Ganti level_id dengan kategori_id
-            ->with('kategori'); // Mengambil data kategori
+        $kategori = KategoriModel::select('kategori_id', 'kategori_kode','kategori_nama');
         
-        // Filter data user berdasarkan kategori_id
-        if($request->kategori_id) {
-            $users->where('kategori_id', $request->kategori_id); // Menggunakan kategori_id untuk filter
-        }
-        
-        return DataTables::of($users)
+        return DataTables::of($kategori) // Gantilah $kategori dengan yang sesuai
             ->addIndexColumn()
-            ->addColumn('aksi', function ($user) {
-                $btn = '<a href="'.url('/user/' . $user->user_id).'" class="btn btn-info btn-sm">Detail</a> ';
-                $btn .= '<a href="'.url('/user/' . $user->user_id . '/edit').'" class="btn btn-warning btn-sm">Edit</a> ';
-                $btn .= '<form class="d-inline-block" method="POST" action="'.url('/user/'.$user->user_id).'">'
-                    . csrf_field() . method_field('DELETE') .
-                    '<button type="submit" class="btn btn-danger btn-sm" onclick="return confirm(\'Apakah Anda yakin menghapus data ini?\');">Hapus</button></form>';
+            ->addColumn('aksi', function ($kategori) {
+                $btn  = '<button onclick="modalAction(\''.url('/kategori/' . $kategori->kategori_id . '/show_ajax').'\')" class="btn btn-info btn-sm">Detail</button> ';
+                $btn .= '<button onclick="modalAction(\''.url('/kategori/' . $kategori->kategori_id . '/edit_ajax').'\')" class="btn btn-warning btn-sm">Edit</button> ';
+                $btn .= '<button onclick="modalAction(\''.url('/kategori/' . $kategori->kategori_id . '/delete_ajax').'\')" class="btn btn-danger btn-sm">Hapus</button> ';
                 return $btn;
             })
-            ->rawColumns(['aksi']) // Menyatakan kolom aksi berupa HTML
+            ->rawColumns(['aksi'])
             ->make(true);
     }
 
@@ -62,21 +50,19 @@ class KategoriController extends Controller
     public function create()
     {
         $breadcrumb = (object) [
-            'title' => 'Tambah User',
-            'list' => ['Home', 'User', 'Tambah']
+            'title' => 'Tambah Kategori',
+            'list' => ['Home', 'Kategori', 'Tambah']
         ];
 
         $page = (object) [
-            'title' => 'Tambah user baru'
+            'title' => 'Tambah kategori baru'
         ];
 
-        $kategori = KategoriModel::all(); // Mengambil data kategori untuk ditampilkan di form
-        $activeMenu = 'user'; // Set menu yang aktif
+        $activeMenu = 'kategori'; // Set menu yang aktif
 
-        return view('user.create', [
+        return view('kategori.create', [
             'breadcrumb' => $breadcrumb,
             'page' => $page,
-            'kategori' => $kategori, // Menyertakan kategori dalam form
             'activeMenu' => $activeMenu
         ]);
     }
@@ -85,110 +71,179 @@ class KategoriController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'username' => 'required|string|min:3|unique:m_user,username',
-            'nama' => 'required|string|max:100',
-            'password' => 'required|min:5',
-            'kategori_id' => 'required|integer' // Ganti level_id menjadi kategori_id
+            'kategori_kode' => 'required|string|max:255|unique:m_kategori,kategori_kode',
+            'kategori_nama' => 'required|string|max:255'
         ]);
 
-        UserModel::create([
-            'username' => $request->username,
-            'nama' => $request->nama,
-            'password' => bcrypt($request->password),
-            'kategori_id' => $request->kategori_id // Menyimpan kategori_id
-        ]);
-
-        return redirect('/user')->with('success', 'Data user berhasil disimpan');
+        KategoriModel::create($request->all());
+ 
+         return redirect('/kategori')->with('success', 'Data kategori berhasil disimpan');
+     
     }
 
     // Menampilkan detail user
-    public function show(string $id)
+    public function show($id)
     {
-        $user = UserModel::with('kategori')->find($id); // Menampilkan kategori saat detail
-
+        $kategori = KategoriModel::findOrFail($id);
+ 
         $breadcrumb = (object) [
-            'title' => 'Detail User',
-            'list' => ['Home', 'User', 'Detail']
+             'title' => 'Detail Kategori',
+             'list'  => ['Home', 'Kategori', 'Detail']
         ];
-
+ 
         $page = (object) [
-            'title' => 'Detail User'
+             'title' => 'Detail Kategori'
         ];
-
-        $activeMenu = 'user'; // Set menu yang aktif
-
-        return view('user.show', [
-            'breadcrumb' => $breadcrumb,
-            'page' => $page,
-            'user' => $user,
-            'activeMenu' => $activeMenu
+ 
+         $activeMenu = 'kategori';
+ 
+         return view('kategori.show', [
+             'breadcrumb' => $breadcrumb,
+             'page'       => $page,
+             'kategori'   => $kategori,
+             'activeMenu' => $activeMenu
         ]);
     }
 
     // Menampilkan halaman form edit user
-    public function edit(string $id)
-    {
-        $user = UserModel::find($id);
-        $kategori = KategoriModel::all(); // Mengambil data kategori untuk form edit
-
-        $breadcrumb = (object) [
-            'title' => 'Edit User',
-            'list' => ['Home', 'User', 'Edit']
-        ];
-
-        $page = (object) [
-            'title' => 'Edit user'
-        ];
-
-        $activeMenu = 'user'; // Set menu yang aktif
-
-        return view('user.edit', [
-            'breadcrumb' => $breadcrumb,
-            'page' => $page,
-            'user' => $user,
-            'kategori' => $kategori, // Menyertakan kategori dalam form edit
-            'activeMenu' => $activeMenu
+    public function edit($id)
+     {
+         $kategori = KategoriModel::findOrFail($id);
+ 
+         $breadcrumb = (object) [
+             'title' => 'Edit Kategori',
+             'list'  => ['Home', 'Kategori', 'Edit']
+         ];
+ 
+         $page = (object) [
+             'title' => 'Edit Kategori'
+         ];
+ 
+         $activeMenu = 'kategori';
+ 
+         return view('kategori.edit', [
+             'breadcrumb' => $breadcrumb,
+             'page'       => $page,
+             'kategori'   => $kategori,
+             'activeMenu' => $activeMenu
         ]);
     }
+ 
 
     // Menyimpan perubahan data user
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
+     {
+         $request->validate([
+             'kategori_kode' => 'required|string|max:255|unique:m_kategori,kategori_kode,'.$id.',kategori_id',
+             'kategori_nama' => 'required|string|max:255'
+         ]);
+ 
+         $kategori = KategoriModel::findOrFail($id);
+         $kategori->update($request->all());
+ 
+         return redirect('/kategori')->with('success', 'Data kategori berhasil diperbarui');
+    }
+ 
+
+    public function destroy($id)
     {
-        $request->validate([
-            'username' => 'required|string|min:3|unique:m_user,username,'.$id.',user_id',
-            'nama' => 'required|string|max:100',
-            'password' => 'nullable|min:5',
-            'kategori_id' => 'required|integer' // Ganti level_id dengan kategori_id
+        $kategori = KategoriModel::find($id);
+        if (!$kategori) {
+             return response()->json([
+                 'status' => false,
+                 'message' => 'Data yang anda cari tidak ditemukan'
+             ]);
+         }
+ 
+         $kategori->delete();
+ 
+         return response()->json([
+             'status' => true,
+             'message' => 'Data kategori berhasil dihapus'
         ]);
-
-        $userData = [
-            'username' => $request->username,
-            'nama' => $request->nama,
-            'kategori_id' => $request->kategori_id // Menyimpan kategori_id
-        ];
-
-        if ($request->password) {
-            $userData['password'] = bcrypt($request->password);
-        }
-
-        UserModel::find($id)->update($userData);
-
-        return redirect('/user')->with('success', 'Data user berhasil diubah');
     }
 
-    // Menghapus data user
-    public function destroy(string $id)
-    {
-        $check = UserModel::find($id);
-        if (!$check) {
-            return redirect('/user')->with('error', 'Data user tidak ditemukan');
-        }
+    public function create_ajax()
+     {
+         return view('kategori.create_ajax');
+     }
+ 
+     public function store_ajax(Request $request)
+     {
+         if ($request->ajax()) {
+             $validator = Validator::make($request->all(), [
+                 'kategori_nama' => 'required|string|unique:m_kategori,kategori_nama|min:3|max:100'
+             ]);
+ 
+             if ($validator->fails()) {
+                 return response()->json(['status' => false, 'message' => 'Validasi Gagal', 'msgField' => $validator->errors()]);
+             }
+ 
+             KategoriModel::create($request->all());
+             return response()->json(['status' => true, 'message' => 'Data kategori berhasil disimpan']);
+         }
+         return redirect('/');
+     }
+ 
+     public function edit_ajax(string $id)
+     {
+         $kategori = KategoriModel::find($id);
+         return view('kategori.edit_ajax', compact('kategori'));
+     }
+ 
+     public function update_ajax(Request $request, $id)
+     {
+         if ($request->ajax()) {
+             $validator = Validator::make($request->all(), [
+                 'kategori_nama' => 'required|string|unique:m_kategori,kategori_nama,'.$id.',kategori_id|min:3|max:100'
+             ]);
+ 
+             if ($validator->fails()) {
+                 return response()->json(['status' => false, 'message' => 'Validasi gagal.', 'msgField' => $validator->errors()]);
+             }
+ 
+             $kategori = KategoriModel::find($id);
+             if ($kategori) {
+                 $kategori->update($request->all());
+                 return response()->json(['status' => true, 'message' => 'Data berhasil diupdate']);
+             }
+             return response()->json(['status' => false, 'message' => 'Data tidak ditemukan']);
+         }
+         return redirect('/');
+     }
+ 
+     public function confirm_ajax(string $id)
+      {
+          $kategori = KategoriModel::find($id);
+  
+          if (!$kategori) {
+              return response()->json(['status' => false, 'message' => 'Data tidak ditemukan'], 404);
+          }
+  
+          return view('kategori.confirm_ajax', ['kategori' => $kategori]);
+      }
+ 
+      public function delete_ajax(Request $request, $id)
+      {
+          if ($request->ajax() || $request->wantsJson()) {
+              $kategori = KategoriModel::find($id);
+  
+              if ($kategori) {
+                  $kategori->delete();
+  
+                  return response()->json([
+                      'status' => true,
+                      'message' => 'Data berhasil dihapus'
+                  ]);
+              } else {
+                  return response()->json([
+                      'status' => false,
+                      'message' => 'Data tidak ditemukan'
+                  ]);
+              }
+          }
+  
+          return redirect('/');
+      }
 
-        try {
-            UserModel::destroy($id); // Hapus data user
-            return redirect('/user')->with('success', 'Data user berhasil dihapus');
-        } catch (\Illuminate\Database\QueryException $e) {
-            return redirect('/user')->with('error', 'Data user gagal dihapus karena masih terdapat tabel lain yang terkait dengan data ini');
-        }
-    }
 }

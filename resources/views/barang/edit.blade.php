@@ -1,81 +1,94 @@
 @extends('layouts.template')
-
-@section('content')
-<section class="content">
-    <div class="card card-outline card-primary">
-        <div class="card-header">
-            <h3 class="card-title">{{ $page }}</h3>
-            <div class="card-tools">
-                <a href="{{ url('user') }}" class="btn btn-sm btn-default"><i class="fas fa-arrow-left"></i> Kembali</a>
-            </div>
-        </div>
-        <div class="card-body">
-            @if (session('error'))
-                <div class="alert alert-danger alert-dismissible">
-                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                    <h5><i class="icon fas fa-ban"></i> Kesalahan!</h5>
-                    {{ session('error') }}
-                </div>
-            @endif
-            <form method="POST" action="{{ url('user') }}" class="form-horizontal">
-                @csrf
-                <div class="form-group row">
-                    <label for="level_id" class="col-sm-2 col-form-label">Level</label>
-                    <div class="col-sm-10">
-                        <select class="form-control" id="level_id" name="level_id" required>
-                            <option value="">Pilih Level</option>
-                            @foreach ($level as $item)
-                                <option value="{{ $item->level_id }}" {{ old('level_id') == $item->level_id ? 'selected' : '' }}>{{ $item->level_nama }}</option>
-                            @endforeach
-                        </select>
-                        @error('level_id')
-                            <small class="form-text text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label for="username" class="col-sm-2 col-form-label">Username</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="username" name="username" value="{{ old('username') }}" required>
-                        @error('username')
-                            <small class="form-text text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label for="name" class="col-sm-2 col-form-label">Nama</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="name" name="name" value="{{ old('name') }}" required>
-                        @error('name')
-                            <small class="form-text text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <label for="password" class="col-sm-2 col-form-label">Password</label>
-                    <div class="col-sm-10">
-                        <input type="password" class="form-control" id="password" name="password">
-                        <small class="form-text text-info">Abaikan (jangan diisi) jika tidak ingin mengganti password user.</small>
-                        @error('password')
-                            <small class="form-text text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <div class="col-sm-10 offset-sm-2">
-                        <button type="submit" class="btn btn-primary">Simpan</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-</section>
-@endsection
-
-@push('css')
-
-@endpush
-
-@push('js')
-
-@endpush
+ 
+ @section('content')
+     <div class="card card-outline card-primary">
+         <div class="card-header">
+             <h3 class="card-title">{{ $page->title }}</h3>
+             <div class="card-tools"></div>
+         </div>
+         <div class="card-body">
+             @empty($barang)
+                 <div class="alert alert-danger alert-dismissible">
+                     <h5><i class="icon fas fa-ban"></i> Kesalahan!</h5>
+                     Data yang Anda cari tidak ditemukan.
+                 </div>
+                 <a href="{{ url('barang') }}" class="btn btn-sm btn-default mt-2">Kembali</a>
+             @else
+                 <form method="POST" action="{{ url('/barang/'.$barang->barang_id) }}" class="form-horizontal">
+                     @csrf
+                     {!! method_field('PUT') !!}
+ 
+                     <div class="form-group row">
+                         <label class="col-2 control-label col-form-label">Kode Barang</label>
+                         <div class="col-10">
+                             <input type="text" class="form-control" name="barang_kode" value="{{ old('barang_kode', $barang->barang_kode) }}" required>
+                             @error('barang_kode')
+                                 <small class="form-text text-danger">{{ $message }}</small>
+                             @enderror
+                         </div>
+                     </div>
+ 
+                     <div class="form-group row">
+                         <label class="col-2 control-label col-form-label">Nama Barang</label>
+                         <div class="col-10">
+                             <input type="text" class="form-control" name="barang_nama" value="{{ old('barang_nama', $barang->barang_nama) }}" required>
+                             @error('barang_nama')
+                                 <small class="form-text text-danger">{{ $message }}</small>
+                             @enderror
+                         </div>
+                     </div>
+ 
+                     <div class="form-group row">
+                         <label class="col-2 control-label col-form-label">Kategori</label>
+                         <div class="col-10">
+                             <select class="form-control" name="kategori_id" required>
+                                 <option value="">- Pilih Kategori -</option>
+                                 @foreach($kategori as $item)
+                                     <option value="{{ $item->kategori_id }}" @if($item->kategori_id == $barang->kategori_id) selected @endif>
+                                         {{ $item->kategori_nama }}
+                                     </option>
+                                 @endforeach
+                             </select>
+                             @error('kategori_id')
+                                 <small class="form-text text-danger">{{ $message }}</small>
+                             @enderror
+                         </div>
+                     </div>
+ 
+                     <div class="form-group row">
+                         <label class="col-2 control-label col-form-label">Harga Beli</label>
+                         <div class="col-10">
+                             <input type="number" class="form-control" name="harga_beli" value="{{ old('harga_beli', $barang->harga_beli) }}" required>
+                             @error('harga_beli')
+                                 <small class="form-text text-danger">{{ $message }}</small>
+                             @enderror
+                         </div>
+                     </div>
+ 
+                     <div class="form-group row">
+                         <label class="col-2 control-label col-form-label">Harga Jual</label>
+                         <div class="col-10">
+                             <input type="number" class="form-control" name="harga_jual" value="{{ old('harga_jual', $barang->harga_jual) }}" required>
+                             @error('harga_jual')
+                                 <small class="form-text text-danger">{{ $message }}</small>
+                             @enderror
+                         </div>
+                     </div>
+ 
+                     <div class="form-group row">
+                         <div class="col-10 offset-2">
+                             <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
+                             <a class="btn btn-sm btn-default ml-1" href="{{ url('barang') }}">Kembali</a>
+                         </div>
+                     </div>
+                 </form>
+             @endempty
+         </div>
+     </div>
+ @endsection
+ 
+ @push('css')
+ @endpush
+ 
+ @push('js')
+ @endpush

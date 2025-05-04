@@ -9,9 +9,11 @@ class BarangModel extends Model
 {
     use HasFactory;
 
-    protected $table = 'barang'; // nama tabel di database
+    protected $table = 'm_barang'; // nama tabel di database
 
     protected $primaryKey = 'barang_id'; // jika primary key bukan 'id'
+
+    public $timestamps = true;
 
     protected $fillable = [
         'kategori_id',
@@ -19,6 +21,8 @@ class BarangModel extends Model
         'barang_nama',
         'harga_beli',
         'harga_jual',
+        'created_at',
+        'updated_at',
     ];
 
     // Relasi ke model Kategori
